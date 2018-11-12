@@ -3,8 +3,9 @@ from PIL import Image, ImageDraw
 #   'LR': Left to right, 'TB': Top to Bottom,
 #   'TlBr': Top left to Bottom Right, 'BlTr': Bottom left to Top right
 #   NOTE: ONLY WORKS FOR IMGS WITH WIDTH >= HEIGHT :(
-def gradientDraw(colors, img, shape, dims):
+def gradientDraw(colors, shape, dims):
     """Takes list of colors, draws on img, a shape with dims dimensions"""
+    img = Image.new('RGBA',dims,color = 'white')
     draw = ImageDraw.Draw(img)
     dimX,dimY = dims
     j = 1
@@ -35,6 +36,7 @@ def gradientDraw(colors, img, shape, dims):
                 j += 1
             draw.line([(0,smaller),(dimX-smaller,dimY)], fill = colors[round(len(colors)/2) - j], width = 1)
             draw.line([(dimX,dimY-smaller),(smaller,0)], fill = colors[round(len(colors)/2) + j-2], width = 1)
+    return img
 
 def gradientListColrs(colors,steps):
     """Returns list of RGB tuples transitioning through all colors in colors\n
