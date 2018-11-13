@@ -9,38 +9,51 @@ def gradientDraw(colors, shape, dims):
     draw = ImageDraw.Draw(img)
     dimX,dimY = dims
     j = 1
-    if(shape == "LR"):
+    if(shape == "LR"):# Vertical Gradient Left to Right
         for xCo in range(dimX):
             if(xCo >= (dimX/len(colors))*j):
                 j += 1
             draw.line([(xCo,0),(xCo,dimY)],fill =(colors[j-1]),width = 1)
-    elif(shape == "TB"):
+    elif(shape == "TB"):# Horizontal Gradient Top to Bottom
         for yCo in range(dimY):
             if(yCo >= (dimY/len(colors))*j):
                 j += 1
             draw.line([(0,yCo),(dimX, yCo)],fill =(colors[j-1]),width = 1)
-    elif(shape == "TlBr"):
-        flip = 2
-        slope = dimY/dimX
-        dist = max(dimX,dimY)
-        if(dist == dimY):
-            flip = .5
-        for i in range(dimX+1):
-            if(i >= (dist/len(colors))*flip*j):#only go 1/2 way
-                j += 1
-            draw.line([(i,0), (0,slope*i)],fill =(colors[j-1]),width = 1)
-            draw.line([(dimX - i,dimY), (dimX,(slope*(dimX-i)))],fill =(colors[len(colors)-(j-1)-1]),width = 1)
-    elif(shape == "BlTr"):
-        for smaller in range(min(dimX,dimY)):
-            if(smaller >= (min(dimX,dimY)/len(colors))*j*2):#only go 1/2 way
-                j += 1
-            draw.line([(0,smaller),(dimX-smaller,dimY)], fill = colors[round(len(colors)/2) - j], width = 1)
-            draw.line([(dimX,dimY-smaller),(smaller,0)], fill = colors[round(len(colors)/2) + j-2], width = 1)
+    elif(shape == "TlBr"):# Diagonal Gradient from TopLeft to BottomRight
+        img = gradientBlTr(img,draw,dimX,dimY,colors)
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+    elif(shape == "BlTr"):# Diagonal Gradient from BottomLeft to TopRight
+        img = gradientBlTr(img,draw,dimX,dimY,colors)
     return img
 
+def gradientBlTr(img,draw,dimX,dimY,colors):
+    """Draws the gradient lines for the BlTr option,
+        seperated because re-used for TlBr option"""
+    slope = dimY/dimX
+    lrger = max(dimX,dimY)
+    if(lrger == dimY): #have to get slope recipricol for Portrait
+        slope = 1/slope
+    divider = lrger/len(colors) #used to step through colors
+    j = 0
+    for i in range(lrger):
+        if(i > divider + (divider *j * 2)):#so use all colors no matter lrger size
+            j += 1
+        if(lrger == dimY):#if taller than wide (Portrait)
+            draw.line([(i*slope,dimY),(0, dimY - i)],
+                fill = colors[j],width = 1)
+            draw.line([(i*slope,0),(dimX,dimY-i)],
+                fill = colors[j + round(len(colors)/2) - 1],width = 1)
+        else:#if wider than tall (Landscape)
+            draw.line([(i,dimY),(0,round(dimY-(i*slope)))],
+                fill = colors[j],width = 1)
+            draw.line([(i,0),(dimX,round(dimY-(i*slope)))],
+                fill = colors[j + round(len(colors)/2) - 1],width = 1)
+    return img
 def gradientListColrs(colors,steps):
     """Returns list of RGB tuples transitioning through all colors in colors\n
         in N steps"""
+    #Good rule of thumb: set steps equal to one of the
+    #   dimensions of the image you intend to use returned colorList on
     if(not(colors) or steps < len(colors)-1): #empty list or too few steps for amount of colors
         return -1
     if(len(colors) == 1): #list of size 1 returns list of that color
