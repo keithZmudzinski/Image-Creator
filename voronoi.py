@@ -1,14 +1,13 @@
-from scipy.spatial import Voronoi, voronoi_plot_2d
 from PIL import Image, ImageDraw
-import matplotlib.pyplot as plt
 import sys
-points = [[128,455],[55,4],[455,56],[555,238],[400,555]]
+
+def tuple1st(tup):
+    return tup[0]
 
 def lineFrmPnts(p1,p2):
     """Returns slope and y-intercept"""
     slope = (p2[1]-p1[1])/(p2[0]-p1[0])
-    intercept = p1[1]-(slope*p1[0])
-    #print('slope', slope, 'intercept',intercept)
+    intercept = p2[1]-(slope*p2[0])
     return slope,intercept
 
 def pntSlpe(pnt,slope):
@@ -63,7 +62,7 @@ def makeAdjList(points):
                 min = dist
             elif(dist <= distance(point,closest2) and dist > min):
                 closest2 = point1
-        adj.append((point,closest1,closest2))
+        adj.append([point,closest1,closest2])
         orig1 = orig.copy()
     return adj#[(point,closest1,closest2),(p,c1,c2)...]
 
@@ -104,11 +103,72 @@ def drawLines(adjList,dims):
 
     return img
 
-list = sortAdjs(makeAdjList(points))
-print(list)
-img = drawLines(list,(800,600))
-draw = ImageDraw.Draw(img)
-for pointi in points:
-    draw.point(pointi,fill = 'red')
+def checkAllDistances(p1,p2,line,adjList):
+    correctDist = (distance(p1,line) + distance(p2,line))/2
 
-img.save('xd.png')
+    for i,vertex in enumerate(adjList):
+        if( correctDist > distance(line,vertex[0])#if closer to another point
+        and vertex[0] != p1:#and that point not orig pnt or clsst you're checking
+        and vertex[0] != p2):   #against
+            vertex.append(line)#save coords that stopped drawing
+            return False        #because they ran into vertex[0]'s area
+        return True
+
+def insideImg(point,dims):
+    #if 0 <= x <= maxX and 0 <= y <= maxY
+    return (point[0] <= dims[0] and point[0] >= 0
+        and point[1] <= dims[1] and point[1] >= 0)
+def changeCoord(pnt,dims,orig,clsst,slope,intercept,dir,adjList):
+    x,y = pnt
+    while (insideImg((x,y),dims)
+        and checkAllDistances(orig,clsst,(x,y),adjList)):
+        x += 1*dir
+        y= slope*x + intercept
+    return x,y
+def incDrawLines(adjList,dims):
+    img = Image.new('RGBA', dims, color = 'white')
+    draw = ImageDraw.Draw(img)
+    for i,vertex in enumerate(adjList):
+        draw.point([vertex[0]],fill = 'red')
+        #for first midpoint
+        midpnt = midpoint(vertex[0],vertex[1])
+        x1,y1 = midpnt
+        x2,y2 = midpnt
+        #slope and intercept for line bet midoint and orig vertex
+        slope,intercept = lineFrmPnts(vertex[0],midpnt)
+        slope = round(invSlpe(slope),1)#get normal to slope
+        intercept = pntSlpe(midpnt,slope)#get y-int for normal to slope
+        x1,y1 = changeCoord((x1,y1),dims,vertex[0],vertex[1],slope,intercept,1,adjList)
+        x2,y2 = changeCoord((x2,y2),dims,vertex[0],vertex[1],slope,intercept,-1,adjList)
+        if(x2-x1!= 0 and y2-y1!= 0):#only draw if actually went anywhere
+            draw.line([(x1,y1),(x2,y2)],fill = 'black', width = 1)
+
+        #for second midpoint
+        midpnt = midpoint(vertex[0],vertex[2])
+        x3,y3 = midpnt
+        x4,y4 = midpnt
+        slope,intercept = lineFrmPnts(vertex[0],midpnt)
+        slope = round(invSlpe(slope),1)
+        intercept = pntSlpe(midpnt,slope)#get y-int for normal to slope
+        x3,y3 = changeCoord((x3,y3),dims,vertex[0],vertex[2],slope,intercept,1,adjList)
+        x4,y4 = changeCoord((x4,y4),dims,vertex[0],vertex[2],slope,intercept,-1,adjList)
+        if(x4-x3 != 0 and y4-y3 != 0):#only draw if actually went anywhere
+            draw.line([(x3,y3),(x4,y4)],fill = 'black', width = 1)
+
+    pntsToConnect = [[(p1,p2) for p1 in v for p2 in v if v.index(p1) > 2 and v.index(p2) > 2]
+        for v in adjList if len(v) > 3]
+    #DRAW LINES HERE
+
+    pntsToConnect = set(pntsToConnect[0])
+    print(pntsToConnect)
+    return img
+
+points = [(554,300),(603,90),(69,69),(432,12)]
+dims = (800,600)
+adjList = makeAdjList(points)
+adjList = sortAdjs(adjList)
+
+# print(adjList)
+img = incDrawLines(adjList,dims)
+print(adjList)
+img.save("test.png")
