@@ -103,16 +103,17 @@ def drawLines(adjList,dims):
 
     return img
 
-def checkAllDistances(p1,p2,line,adjList):
+def checkAllDistances(p1,p2,line,adjList,counter):
     correctDist = (distance(p1,line) + distance(p2,line))/2
 
     for i,vertex in enumerate(adjList):
         if( correctDist > distance(line,vertex[0])#if closer to another point
-        and vertex[0] != p1:#and that point not orig pnt or clsst you're checking
+        and vertex[0] != p1#and that point not orig pnt or clsst you're checking
         and vertex[0] != p2):   #against
-            vertex.append(line)#save coords that stopped drawing
-            return False        #because they ran into vertex[0]'s area
-        return True
+            if counter > 0:
+                vertex.append(line)#save coords that stopped drawing (only if they've moved)
+            return False            #because they ran into vertex[0]'s area
+    return True
 
 def insideImg(point,dims):
     #if 0 <= x <= maxX and 0 <= y <= maxY
@@ -120,8 +121,10 @@ def insideImg(point,dims):
         and point[1] <= dims[1] and point[1] >= 0)
 def changeCoord(pnt,dims,orig,clsst,slope,intercept,dir,adjList):
     x,y = pnt
+    i = 0
     while (insideImg((x,y),dims)
-        and checkAllDistances(orig,clsst,(x,y),adjList)):
+        and checkAllDistances(orig,clsst,(x,y),adjList,i)):
+        i += 1
         x += 1*dir
         y= slope*x + intercept
     return x,y
@@ -158,17 +161,23 @@ def incDrawLines(adjList,dims):
     pntsToConnect = [[(p1,p2) for p1 in v for p2 in v if v.index(p1) > 2 and v.index(p2) > 2]
         for v in adjList if len(v) > 3]
     #DRAW LINES HERE
-
-    pntsToConnect = set(pntsToConnect[0])
+    for i,fullList in enumerate(pntsToConnect):
+        pntsToConnect[i] = set(fullList)#remove duplicate items in list
+        for pair in pntsToConnect[i].copy():
+            if(pair[0] == pair[1]):
+                pntsToConnect[i].remove(pair)#remove pairs with p1 == p2
+    for regionSet in pntsToConnect:
+        for pair in regionSet:
+            draw.line([pair[0],pair[1]],fill = 'black',width = 1)
     print(pntsToConnect)
     return img
 
-points = [(554,300),(603,90),(69,69),(432,12)]
+points = [(554,300),(603,90),(432,12),(123,80)]
 dims = (800,600)
 adjList = makeAdjList(points)
 adjList = sortAdjs(adjList)
 
 # print(adjList)
 img = incDrawLines(adjList,dims)
-print(adjList)
+#print(adjList)
 img.save("test.png")
