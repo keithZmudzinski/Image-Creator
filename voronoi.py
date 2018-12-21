@@ -71,7 +71,8 @@ def changeCoord(pnt,dims,orig,clsst,slope,intercept,dir,points):
             i += 1
         x += 1*dir
         y= slope*x + intercept
-    validx2,validy2 = x - 1*dir,slope*x + intercept#last valid point
+    validx2,validy2 = x - 1*dir,slope*(x - 1*dir) + intercept#last valid point
+    #validx2,validy2 = x,y#last invalid point
     return ((validx1,validy1),(validx2,validy2))
 
 def incDrawLines(points,dims):
@@ -79,14 +80,17 @@ def incDrawLines(points,dims):
     return image with voronoi lines drawn on it'''
     img = Image.new('RGBA', dims, color = 'white')
     draw = ImageDraw.Draw(img)
-    for point in points:
+    regions = [list() for point in points]
+    for i, point in enumerate(points):
+        draw.point([point],fill = 'red')
         for otherPoint in points:
             if point == otherPoint:
-                break
+                continue
             midpnt = midpoint(point,otherPoint)
             x,y = midpnt
             #slope and intercept for line bet midoint and orig vertex
             slope,intercept = lineFrmPnts(point,midpnt)
+            slope = round(slope,1)
             slope = round(invSlpe(slope),1)#get normal to slope
             intercept = pntSlpe(midpnt,slope)#get y-int for normal to slope
             pnt1Pos,pnt2Pos = changeCoord((x,y),dims,point,otherPoint,slope,intercept,1,points)
@@ -94,6 +98,37 @@ def incDrawLines(points,dims):
             if(pnt1Pos != pnt2Pos and pnt1Neg != pnt2Neg):
                 if(pnt1Pos != (0,0) and pnt2Pos != (0,0)):
                     draw.line([pnt1Pos,pnt2Pos],fill = 'black', width = 1)
+                    regions[i].append((pnt1Pos,pnt2Pos))
                 if(pnt1Neg != (0,0) and pnt2Neg != (0,0)):
                     draw.line([pnt1Neg,pnt2Neg],fill = 'black', width = 1)
-    return img
+                    regions[i].append((pnt1Neg,pnt2Neg))
+    return img,regions
+
+def getSmallestLineX(region):
+    strting1 = min(region, key = lambda t: t[0][0])
+    strtingX = strting1[0][0]
+    strting2 = min(region, key = lambda t: t[1][0])
+    if strting1[0][0] >= strting2[1][0]:
+        strting1 = strting2
+    return strting1
+
+def defineRegions(regionsCoords):
+    regionsCoordsCopy = regionsCoords.copy()
+    regOutline = [[] for region in regionsCoordsCopy]
+    for region in regionsCoordsCopy:
+        strting1 = getSmallestLineX(region)
+        region.remove(strting1)
+        strting2 = getSmallestLineX(region)
+        region.remove(strting2)
+
+        print(strting1,strting2)
+
+
+
+
+points = [(433,233),(222,0),(100,500)]
+dims = (800,600)
+img,regions = incDrawLines(points,dims)
+img.save('test.png')
+[print(i,region) for i,region in enumerate(regions)]
+defineRegions(regions)

@@ -11,13 +11,14 @@ def frange(width, step):
         start += step
 
 def makeTDrop(img,m,domain,multiplier,outline):
-    """Returns t-drop image"""
+    """Returns t-drop image and list of y-value differences for use in 'outlineTDrop'"""
     #draws tdrop on-top-of given image, does not alter original
     #m is how 'tear-droppy' it is; higher m = longer tail
     #larger domain repeats points more,
         #better for more solid lines
     #final img dim = (multiplier*2,multiplier*2)
         #higher num makes finer line
+    #outline is a string; specify color to outline tdrop
     step = .0009 #Used to create closer together points (more points = better)
     multiplier = round(multiplier)
     points = []
@@ -50,6 +51,10 @@ def makeTDrop(img,m,domain,multiplier,outline):
     return img1, fillArray
 
 def outlineTDrop(img,list):
+    '''Uses return values from makeTdrop to create singular tdrop image'''
+    #img: PIL img class; use img1 returned from 'makeTDrop'
+    #list: holds differences between y-values to outline tdrop;
+        #returned from 'makeTdrop'
     img = img.copy()
     draw = ImageDraw.Draw(img)
     maxX = round(max(list,key = lambda t: t[0])[0]/2)#getlargestX 1/2
