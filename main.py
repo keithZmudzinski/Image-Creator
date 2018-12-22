@@ -4,19 +4,22 @@ from voronoi import *
 from PIL import Image, ImageDraw
 
 
-dims = (800,600)
-colors = [(255, 191, 0,255),(123,221,0,255),(191, 0, 255,255)]
+dims = (1920,1080)
+points = [(305,249),(191,803),(1107,400),(1000,900)]
+colors = [(255, 102, 179,255),(255, 153, 51,255)]#(191, 0, 255,255)]
 colors = gradientListColrs(colors, dims[1])
 #
-img = gradientDraw(colors,'TlBr', dims)
-img1 = gradientDraw(colors,'LR',dims)
-img2 = gradientDraw(colors,'BlTr',dims)
-img3 = gradientDraw(colors,'TB',dims)
+img = gradientDraw(colors,'BlTr', dims)
+img1 = gradientDraw(colors,'TlBr',dims)
+colors = [(255, 153, 51,255),(255, 102, 179,255)]
+colors = gradientListColrs(colors,dims[1])
+img2 = gradientDraw(colors,'LR',dims)
+img3 = gradientDraw(colors,'LR',dims)
 # tdrop,tdropList = makeTDrop(img,3,(0,50),100,'red')
 # Timg = outlineTDrop(tdrop,tdropList)
 # Timg.save('tdrop.png')
 # img.save('banner.png')
-points = [(433,233),(222,0),(100,500),(321,50)]
+
 vlinesImg,regions = incDrawLines(points,dims)
 vlinesImg.save('test.png')
 [print(i,region) for i,region in enumerate(regions)]
