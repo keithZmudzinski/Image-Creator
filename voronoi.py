@@ -7,10 +7,12 @@ def tuple1st(tup):
 
 def lineFrmPnts(p1,p2):
     """Returns slope and y-intercept"""
-    slope = (p2[1]-p1[1])/(p2[0]-p1[0])
-    intercept = p2[1]-(slope*p2[0])
-    return slope,intercept
+    slpe = slope(p1,p2)
+    intercept = p2[1]-(slpe*p2[0])
+    return slpe,intercept
 
+def slope(p1,p2):
+    return (p2[1]-p1[1])/(p2[0]-p1[0])
 def pntSlpe(pnt,slope):
     """Returns y-intercept of line"""
     return (pnt[1]-slope*pnt[0])
@@ -82,7 +84,6 @@ def incDrawLines(points,dims):
     draw = ImageDraw.Draw(img)
     regions = [list() for point in points]
     for i, point in enumerate(points):
-        draw.point([point],fill = 'red')
         for otherPoint in points:
             if point == otherPoint:
                 continue
@@ -104,31 +105,69 @@ def incDrawLines(points,dims):
                     regions[i].append((pnt1Neg,pnt2Neg))
     return img,regions
 
-def getSmallestLineX(region):
-    strting1 = min(region, key = lambda t: t[0][0])
-    strtingX = strting1[0][0]
-    strting2 = min(region, key = lambda t: t[1][0])
-    if strting1[0][0] >= strting2[1][0]:
-        strting1 = strting2
-    return strting1
 
-def defineRegions(regionsCoords):
-    regionsCoordsCopy = regionsCoords.copy()
-    regOutline = [[] for region in regionsCoordsCopy]
-    for region in regionsCoordsCopy:
-        strting1 = getSmallestLineX(region)
-        region.remove(strting1)
-        strting2 = getSmallestLineX(region)
-        region.remove(strting2)
+def createCollage(imgList,regionList,points):
+    '''Returns new image'''
+    #imgList: list of PIL image objects
+        #imgList size should be equal to regionList size
+        #each img in imgList needs to be of same size
+    #regionList: list of region lists
+        #will have same size as points
+        #each region in regionList defines 1 region
+        #obtain regionList from 2nd returned value of incDrawLines
+    #points: list of user specified points; [(x1,y1),(x2,y2),...]
+        #All points should fall within specified dimensions
+    #NOTE: when creating images and regions, use the same dimensions for both
+        #this ensures the regions allign and fill up the given images
+    if len(imgList) != len(regionList) or len(regionList) != len(points):
+        raise ValueError('imgList or regionList or points not of same size',
+            len(imgList),len(regionList),len(points))
+    finalImg = imgList[0]
+    for i,img in enumerate(imgList):
+        imgTemp = outlineRegion(img,regionList[i],points[i])
+        finalImg = Image.alpha_composite(finalImg,imgTemp)
+    return finalImg
 
-        print(strting1,strting2)
-
-
-
-
-points = [(433,233),(222,0),(100,500)]
-dims = (800,600)
-img,regions = incDrawLines(points,dims)
-img.save('test.png')
-[print(i,region) for i,region in enumerate(regions)]
-defineRegions(regions)
+def outlineRegion(img,region,point):
+    '''Outlines given region on given img, returns new image'''
+    #img: PIL img class,should be the img you want region
+        #to be cut out of
+        #all imgs used for given final img should be of same size
+        #does not alter image, returns new image
+    #region: list of tuples, tuples consist of start and end point
+        #[((x1,y1),(x2,y2)),...]
+    #point: coresponding voronoi point to the defined region
+    imgCopy = img.copy()
+    draw = ImageDraw.Draw(imgCopy)
+    dims = imgCopy.size
+    for line in region:
+        slope,intercept = lineFrmPnts(line[0],line[1])
+        offset = min(line[0][0],line[1][0])
+        interval = abs(line[0][0] - line[1][0])
+        y = slope*point[0] + intercept
+        if y > point[1]:#need to erase downwards
+            if slope < 0:#need to erase to the right
+                for i in range(0,interval):
+                    x = i + offset
+                    y = slope*x + intercept
+                    #draw.line(((x,y),(x,dims[1])),fill = (0,0,0,0),width = 1)
+                    draw.rectangle([(x,y),(dims[0],dims[1])],fill = (0,0,0,0))
+            else:#erase to the Left
+                for i in range(0,interval):
+                    x = i + offset
+                    y = slope*x + intercept
+                    draw.rectangle([(x,y),(0,dims[1])],fill = (0,0,0,0))
+        else:#erase upwards
+            if slope < 0:#erase to the left
+                for i in range(0,interval):
+                    x = i + offset
+                    y = slope*x + intercept
+                    draw.rectangle([(x,y),(0,0)],fill = (0,0,0,0))
+                    #draw.line(((x,y),(x,0)),fill = (0,0,0,0),width = 1)
+            else:#erase to the right
+                for i in range(0,interval):
+                    x = i + offset
+                    y = slope*x + intercept
+                    draw.rectangle([(x,y),(dims[0],0)],fill = (0,0,0,0))
+        #ERASE SIDEWAYS, FLIP THE AXES AND DO SAME THING AGAIN
+    return imgCopy

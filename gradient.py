@@ -5,6 +5,8 @@ from PIL import Image, ImageDraw
 #   NOTE: ONLY WORKS FOR IMGS WITH WIDTH >= HEIGHT :(
 def gradientDraw(colors, shape, dims):
     """Takes list of colors, draws on img, a shape with dims dimensions"""
+    if(shape != 'LR' and shape != 'TB' and shape != 'TlBr' and shape != 'BlTr'):
+        raise ValueError('Shape not one of four accepted values', shape)
     img = Image.new('RGBA',dims,color = 'white')
     draw = ImageDraw.Draw(img)
     dimX,dimY = dims
