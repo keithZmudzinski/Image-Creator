@@ -5,25 +5,27 @@ from PIL import Image, ImageDraw
 
 
 dims = (1920,1080)
-points = [(305,249),(191,803),(1107,400),(1000,900)]
-colors = [(255, 102, 179,255),(255, 153, 51,255)]#(191, 0, 255,255)]
-colors = gradientListColrs(colors, dims[1])
-#
-img = gradientDraw(colors,'BlTr', dims)
-img1 = gradientDraw(colors,'TlBr',dims)
-colors = [(255, 153, 51,255),(255, 102, 179,255)]
-colors = gradientListColrs(colors,dims[1])
-img2 = gradientDraw(colors,'LR',dims)
-img3 = gradientDraw(colors,'LR',dims)
-# tdrop,tdropList = makeTDrop(img,3,(0,50),100,'red')
-# Timg = outlineTDrop(tdrop,tdropList)
-# Timg.save('tdrop.png')
-# img.save('banner.png')
+points = [(341,233),(479,681),(1555,181),(123,3),(1700,300),(1400,800)]
+
+colors1 = [(0, 51, 153,255),(0,0,0,255)]
+colors1 = gradientListColrs(colors1, dims[0])
+
+colors2 = [(26,60,128,255),(0, 0, 0,255)]
+colors2 = gradientListColrs(colors2,dims[0])
+
+colors3 = [(0, 153, 102,255),(0, 0, 0,255)]
+colors3 = gradientListColrs(colors3,dims[0])
+
+colors4 = [(51,0,153,255),(0,0,0,255)]
+colors4 = gradientListColrs(colors4,dims[0])
+
+img1 = gradientDraw(colors1,'TlBr', dims)
+img2 = gradientDraw(colors2,'TlBr',dims)
+img3 = gradientDraw(colors3,'TlBr',dims)
+img4 = gradientDraw(colors4,'TlBr',dims)
+img5 = gradientDraw(colors3,'TlBr',dims)
 
 vlinesImg,regions = incDrawLines(points,dims)
 vlinesImg.save('test.png')
-[print(i,region) for i,region in enumerate(regions)]
-collage = createCollage([img,img1,img2,img3],regions,points)
+collage = createCollage([img1,img2,img1,img2,img3,img4],regions,points)
 collage.save('collage.png')
-#firstRegionImg = outlineRegion(img,regions[3],points[3])
-#firstRegionImg.save('singleRegion.png')

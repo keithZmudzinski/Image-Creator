@@ -12,7 +12,12 @@ def lineFrmPnts(p1,p2):
     return slpe,intercept
 
 def slope(p1,p2):
-    return (p2[1]-p1[1])/(p2[0]-p1[0])
+    if(p1 == p2):
+        return 0
+    elif p2[0]-p1[0] == 0:
+        return sys.maxsize
+    else:
+        return (p2[1]-p1[1])/(p2[0]-p1[0])
 def pntSlpe(pnt,slope):
     """Returns y-intercept of line"""
     return (pnt[1]-slope*pnt[0])
@@ -24,7 +29,7 @@ def invSlpe(slp):
         sys.exit('Do not enter equidistant points. This results in an infinite slope')
 
 def midpoint(p1,p2):
-    return (round((p1[0]+p2[0])/2),round((p1[1]+p2[1])/2))
+    return ((p1[0]+p2[0])/2,(p1[1]+p2[1])/2)
 
 def distance(p1,p2):
     return ((p2[1] - p1[1])**2 + (p2[0] - p1[0])**2)**.5
@@ -73,8 +78,8 @@ def changeCoord(pnt,dims,orig,clsst,slope,intercept,dir,points):
             i += 1
         x += 1*dir
         y= slope*x + intercept
-    validx2,validy2 = x - 1*dir,slope*(x - 1*dir) + intercept#last valid point
-    #validx2,validy2 = x,y#last invalid point
+    #validx2,validy2 = x - 1*dir,slope*(x - 1*dir) + intercept#last valid point
+    validx2,validy2 = x,y#last invalid point
     return ((validx1,validy1),(validx2,validy2))
 
 def incDrawLines(points,dims):
@@ -84,6 +89,7 @@ def incDrawLines(points,dims):
     draw = ImageDraw.Draw(img)
     regions = [list() for point in points]
     for i, point in enumerate(points):
+        draw.point(point,fill = 'red')
         for otherPoint in points:
             if point == otherPoint:
                 continue
@@ -91,11 +97,17 @@ def incDrawLines(points,dims):
             x,y = midpnt
             #slope and intercept for line bet midoint and orig vertex
             slope,intercept = lineFrmPnts(point,midpnt)
-            slope = round(slope,1)
-            slope = round(invSlpe(slope),1)#get normal to slope
+            #slope = round(slope,1)
+            slope = invSlpe(slope)#get normal to slope
             intercept = pntSlpe(midpnt,slope)#get y-int for normal to slope
             pnt1Pos,pnt2Pos = changeCoord((x,y),dims,point,otherPoint,slope,intercept,1,points)
             pnt1Neg,pnt2Neg = changeCoord((x,y),dims,point,otherPoint,slope,intercept,-1,points)
+
+            pnt1Pos = (round(pnt1Pos[0]),round(pnt1Pos[1]))
+            pnt2Pos = (round(pnt2Pos[0]),round(pnt2Pos[1]))
+            pnt1Neg = (round(pnt1Neg[0]),round(pnt1Neg[1]))
+            pnt2Neg = (round(pnt2Neg[0]),round(pnt2Neg[1]))
+
             if(pnt1Pos != pnt2Pos and pnt1Neg != pnt2Neg):
                 if(pnt1Pos != (0,0) and pnt2Pos != (0,0)):
                     draw.line([pnt1Pos,pnt2Pos],fill = 'black', width = 1)
@@ -104,6 +116,7 @@ def incDrawLines(points,dims):
                     draw.line([pnt1Neg,pnt2Neg],fill = 'black', width = 1)
                     regions[i].append((pnt1Neg,pnt2Neg))
     return img,regions
+
 
 
 def createCollage(imgList,regionList,points):
@@ -147,27 +160,31 @@ def outlineRegion(img,region,point):
         y = slope*point[0] + intercept
         if y > point[1]:#need to erase downwards
             if slope < 0:#need to erase to the right
-                for i in range(0,interval):
+                for i in range(-1,interval+1):
                     x = i + offset
                     y = slope*x + intercept
-                    #draw.line(((x,y),(x,dims[1])),fill = (0,0,0,0),width = 1)
-                    draw.rectangle([(x,y),(dims[0],dims[1])],fill = (0,0,0,0))
-            else:#erase to the Left
-                for i in range(0,interval):
+                    draw.rectangle([(x+1,y+1),(dims[0],dims[1])],fill = (0,0,0,0))
+            elif slope > 0:#erase to the Left
+                for i in range(-1,interval+1):
                     x = i + offset
                     y = slope*x + intercept
-                    draw.rectangle([(x,y),(0,dims[1])],fill = (0,0,0,0))
+                    draw.rectangle([(x-1,y+1),(0,dims[1])],fill = (0,0,0,0))
+            else: #erase left and right (slope = 0)
+                y = intercept
+                draw.rectangle([(0,intercept),(dims[0],dims[1])],fill = (0,0,0,0))
         else:#erase upwards
             if slope < 0:#erase to the left
-                for i in range(0,interval):
+                for i in range(-1,interval+1):
                     x = i + offset
                     y = slope*x + intercept
-                    draw.rectangle([(x,y),(0,0)],fill = (0,0,0,0))
-                    #draw.line(((x,y),(x,0)),fill = (0,0,0,0),width = 1)
-            else:#erase to the right
-                for i in range(0,interval):
+                    draw.rectangle([(x-1,y-1),(0,0)],fill = (0,0,0,0))
+            elif slope > 0:#erase to the right
+                for i in range(-1,interval+1):
                     x = i + offset
                     y = slope*x + intercept
-                    draw.rectangle([(x,y),(dims[0],0)],fill = (0,0,0,0))
-        #ERASE SIDEWAYS, FLIP THE AXES AND DO SAME THING AGAIN
+                    draw.rectangle([(x+1,y-1),(dims[0],0)],fill = (0,0,0,0))
+            else: #erase left and right(slope = 0)
+                y = intercept
+                draw.rectangle([(0,intercept),(dims[0],0)],fill = (0,0,0,0))
+
     return imgCopy
